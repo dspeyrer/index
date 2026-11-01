@@ -1,0 +1,19 @@
+:root {
+	font-size: 18px;
+	font-family: system-ui, 'Segoe UI', Roboto, sans-serif;
+
+	color-scheme: light dark;
+
+	color: var(--fg);
+	background: var(--bg);
+
+	--fg: #444;
+	--bg: #eee;
+}
+
+@media (prefers-color-scheme: dark) {
+	:root {
+		--fg: #bbb;
+		--bg: #111;
+	}
+}
