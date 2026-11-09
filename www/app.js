@@ -53,20 +53,33 @@ listInput.addEventListener("input", function () {
 
 	listInput.value = "";
 
-	const listItemText = new Text(videoId);
+	const listItem = document.createElement("li");
+
+	const listItemLink = document.createElement("a");
+	listItemLink.href = `#/v/${videoId}`;
 
 	const listItemThumb = document.createElement("img");
 	listItemThumb.src = `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`;
 	listItemThumb.classList.add("list-item-thumb");
 
-	const listItemLink = document.createElement("a");
-	listItemLink.href = `#/v/${videoId}`;
+	const listItemText = new Text(videoId);
 
 	listItemLink.replaceChildren(listItemThumb, listItemText);
 
-	const listItem = document.createElement("li");
-	listItem.appendChild(listItemLink);
+	const listItemRemove = document.createElement("button");
+	listItemRemove.classList.add("list-item-remove");
+	listItemRemove.replaceChildren(new Text("x"));
+
+	listItem.replaceChildren(listItemLink, listItemRemove);
 
 	listItems.insertBefore(listItem, firstListItem);
 	firstListItem = listItem;
+});
+
+listItems.addEventListener("click", function (event) {
+	const targetEl = /** @type {Element} */ (event.target);
+
+	if (targetEl.classList.contains("list-item-remove")) {
+		listItems.removeChild(/** @type {HTMLLIElement} */ (targetEl.parentNode));
+	}
 });
