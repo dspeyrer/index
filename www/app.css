@@ -17,3 +17,16 @@
 		--bg: #111;
 	}
 }
+
+#list-input {
+	width: 20em;
+}
+
+#list-items {
+	list-style: none;
+	padding: 0;
+}
+
+.list-item-thumb {
+	height: 3em;
+}
