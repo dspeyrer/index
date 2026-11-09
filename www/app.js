@@ -9,6 +9,9 @@ const listItems =
 /** @type {HTMLLIElement | null} */
 let firstListItem = null;
 
+/** @type {Set<string>} */
+const listItemIds = new Set();
+
 /**
  * @param {string} url
  */
@@ -53,6 +56,13 @@ listInput.addEventListener("input", function () {
 
 	listInput.value = "";
 
+	if (listItemIds.has(videoId)) {
+		return;
+	}
+
+	listItemIds.add(videoId);
+
+
 	const listItem = document.createElement("li");
 
 	const listItemLink = document.createElement("a");
@@ -68,6 +78,7 @@ listInput.addEventListener("input", function () {
 
 	const listItemRemove = document.createElement("button");
 	listItemRemove.classList.add("list-item-remove");
+	listItemRemove.dataset["videoId"] = videoId;
 	listItemRemove.replaceChildren(new Text("x"));
 
 	listItem.replaceChildren(listItemLink, listItemRemove);
@@ -77,9 +88,12 @@ listInput.addEventListener("input", function () {
 });
 
 listItems.addEventListener("click", function (event) {
-	const targetEl = /** @type {Element} */ (event.target);
+	const targetEl = /** @type {HTMLElement} */ (event.target);
 
 	if (targetEl.classList.contains("list-item-remove")) {
-		listItems.removeChild(/** @type {HTMLLIElement} */ (targetEl.parentNode));
+		listItems.removeChild(/** @type {HTMLLIElement} */(targetEl.parentNode));
+
+		const videoId = /** @type {string} */ (targetEl.dataset["videoId"]);
+		listItemIds.delete(videoId);
 	}
 });
