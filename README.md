@@ -8,9 +8,9 @@ This is a YouTube video tracker with two primary motivations:
 This web app aims to address these and provide a lot of nice other features along the way.
 
 ## Feature tracker
-- [ ] Basic video list
+- [x] Basic video list
 - [ ] Video playback time tracking
-- [ ] Client-side storage backend
+- [x] Client-side storage backend
 - [ ] Server-side storage backend
 - [ ] Integrated SponsorBlock
 - [ ] Channel subscriptions

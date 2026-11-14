@@ -18,6 +18,11 @@
 	}
 }
 
+main {
+	display: flex;
+	flex-direction: row;
+}
+
 #list-input {
 	width: 20em;
 }

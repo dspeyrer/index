@@ -1,4 +1,5 @@
 import { Deferred } from "./app/deferred.js";
+import { player } from "./app/player.js";
 
 const listInput =
 	/** @type {HTMLInputElement} */
@@ -91,12 +92,17 @@ function tryParseUrl(url) {
 	}
 }
 
-/** @type (videoId: string) => void */
+/** @type {(video: string) => void} */
+const updatePlayerVideo = player.bind(function (player, videoId) {
+	player.cueVideoById(videoId);
+});
+
+/** @type {(videoId: string) => void} */
 const updateUrlVideoId = listItemIds.bind(function (listItemIds, videoId) {
 	if (listItemIds.has(videoId)) {
 		currentId = videoId;
+		updatePlayerVideo(videoId);
 	} else {
-		currentId = null;
 		window.location.replace("#/");
 	}
 });
