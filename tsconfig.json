@@ -13,5 +13,5 @@
 		"noEmit": true,
 		"target": "es2015"
 	},
-	"include": ["www/**/*.js"]
+	"include": ["www/**/*.js", "www/**/*.ts"]
 }

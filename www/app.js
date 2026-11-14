@@ -1,3 +1,7 @@
+/**
+ * @import { ListItem } from "./app.types"
+ */
+
 import { Deferred } from "./app/deferred.js";
 import { player } from "./app/player.js";
 
@@ -5,7 +9,7 @@ const listInput =
 	/** @type {HTMLInputElement} */
 	(document.getElementById("list-input"));
 
-const listItems =
+const listItemsEl =
 	/** @type {HTMLUListElement} */
 	(document.getElementById("list-items"));
 
@@ -15,8 +19,10 @@ let currentId = null;
 /** @type {Deferred<IDBDatabase>} */
 const db = new Deferred();
 
-/** @type {Deferred<Set<string>>} */
-const listItemIds = new Deferred();
+/**
+ * @type {Deferred<Map<string, ListItem>>}
+ */
+const listItems = new Deferred();
 
 /**
  * @param {string} videoId
@@ -58,12 +64,20 @@ db.then(function (db) {
 		.transaction("list", "readonly")
 		.objectStore("list")
 		.index("createdAt")
-		.getAllKeys()
+		.getAll()
 		.addEventListener("success", function () {
-			const videoIds = /** @type {string[]} */(this.result).reverse();
+			const listItemNodes = [];
+			const listItemMap = new Map();
 
-			listItems.replaceChildren(...videoIds.map(makeListItemNode));
-			listItemIds.resolve(new Set(videoIds));
+			for (let i = this.result.length - 1; i >= 0; i--) {
+				const item = /** @type {ListItem} */(this.result[i]);
+
+				listItemNodes.push(makeListItemNode(item.videoId));
+				listItemMap.set(item.videoId, item);
+			}
+
+			listItemsEl.replaceChildren(...listItemNodes);
+			listItems.resolve(listItemMap);
 		});
 });
 
@@ -94,16 +108,18 @@ function tryParseUrl(url) {
 	}
 }
 
-/** @type {(video: string) => void} */
-const updatePlayerVideo = player.bind(function (player, videoId) {
-	player.cueVideoById(videoId);
+/** @type {(item: ListItem) => void} */
+const cuePlayerVideo = player.bind(function (player, item) {
+	player.cueVideoById(item.videoId, item.timestamp);
 });
 
 /** @type {(videoId: string) => void} */
-const updateUrlVideoId = listItemIds.bind(function (listItemIds, videoId) {
-	if (listItemIds.has(videoId)) {
+const updateUrlVideoId = listItems.bind(function (listItems, videoId) {
+	const listItem = listItems.get(videoId);
+
+	if (listItem !== undefined) {
 		currentId = videoId;
-		updatePlayerVideo(videoId);
+		cuePlayerVideo(listItem);
 	} else {
 		window.location.replace("#/");
 	}
@@ -147,31 +163,51 @@ window.addEventListener("hashchange", function () {
 	updatePath();
 });
 
-/** @type (videoId: string) => void */
-const addVideoId = listItemIds.bind(function (listItemIds, videoId) {
-	if (listItemIds.has(videoId)) {
+/** @type (videoId: string, timestamp: number) => void */
+const addVideo = listItems.bind(function (listItems, videoId, timestamp) {
+	if (listItems.has(videoId)) {
 		listInput.value = "";
 		listInput.disabled = false;
 
 		return;
 	}
 
+	const listItem = { videoId, createdAt: new Date(), timestamp };
+
 	/** @type {IDBDatabase} */(db.value)
 		.transaction("list", "readwrite")
 		.objectStore("list")
-		.add({ videoId, createdAt: new Date() })
+		.add(listItem)
 		.addEventListener("success", function () {
-			listItemIds.add(videoId);
+			listItems.set(videoId, listItem);
 
-			listItems.insertBefore(
+			listItemsEl.insertBefore(
 				makeListItemNode(videoId),
-				listItems.firstChild
+				listItemsEl.firstChild
 			);
 
 			listInput.value = "";
 			listInput.disabled = false;
 		});
 });
+
+/**
+ * @param {string | null} string
+ * @param {number} fallback
+ */
+function parseIntOrDefault(string, fallback) {
+	if (string === null) {
+		return fallback;
+	}
+
+	const parsed = parseInt(string);
+
+	if (Number.isNaN(parsed)) {
+		return fallback;
+	}
+
+	return parsed;
+}
 
 listInput.addEventListener("input", function () {
 	const url = tryParseUrl(listInput.value);
@@ -200,12 +236,14 @@ listInput.addEventListener("input", function () {
 		return;
 	}
 
+	let timestamp = parseIntOrDefault(url.searchParams.get("t"), 0);
+
 	listInput.disabled = true;
 
-	addVideoId(videoId);
+	addVideo(videoId, timestamp);
 });
 
-listItems.addEventListener("click", function (event) {
+listItemsEl.addEventListener("click", function (event) {
 	const targetEl = /** @type {HTMLElement} */(event.target);
 
 	if (targetEl.classList.contains("list-item-remove")) {
@@ -220,13 +258,13 @@ listItems.addEventListener("click", function (event) {
 			.objectStore("list")
 			.delete(videoId)
 			.addEventListener("success", function () {
-				/** @type {Set<string>} */(listItemIds.value).delete(videoId);
+				/** @type {Map<string, ListItem>} */(listItems.value).delete(videoId);
 
 				if (videoId === currentId) {
 					window.location.replace("#/");
 				}
 
-				listItems.removeChild(listItemEl);
+				listItemsEl.removeChild(listItemEl);
 
 				removeButton.disabled = false;
 			});

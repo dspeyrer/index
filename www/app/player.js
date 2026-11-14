@@ -8,19 +8,17 @@ const firstScriptTag = document.getElementsByTagName("script")[0];
 /** @type {Deferred<any>} */
 export const player = new Deferred();
 
-/** @type {any} */ (window).onYouTubeIframeAPIReady = function () {
+window.onYouTubeIframeAPIReady = function () {
 	const playerEl = /** @type {HTMLElement} */(document.getElementById("player"));
 
 	const playerWidth = /** @type {HTMLElement} */(playerEl.parentNode).offsetWidth;
 	const playerHeight = playerWidth / 16 * 9;
 
-	new /** @type {any} */(window).YT.Player(playerEl, {
+	new YT.Player(playerEl, {
 		width: playerWidth | 0,
 		height: playerHeight | 0,
 		events: {
-			/**
-			 * @param {any} event
-			 */
+			/** @param {any} event */
 			onReady(event) {
 				player.resolve(event.target);
 			}
