@@ -10,10 +10,17 @@ const firstScriptTag = document.getElementsByTagName("script")[0];
 export const player = new Deferred();
 
 /** @type {any} */ (window).onYouTubeIframeAPIReady = function () {
+	const playerEl = /** @type {HTMLElement} */(document.getElementById("player"));
+
+	const playerWidth = /** @type {HTMLElement} */(playerEl.parentNode).offsetWidth;
+	const playerHeight = playerWidth / 16 * 9;
+
+	console.log(playerEl.offsetWidth | 0, playerHeight | 0);
+
 	player.resolve(
-		new /** @type {any} */(window).YT.Player("player", {
-			width: "960",
-			height: "540",
+		new /** @type {any} */(window).YT.Player(playerEl, {
+			width: playerWidth | 0,
+			height: playerHeight | 0
 		})
 	);
 };

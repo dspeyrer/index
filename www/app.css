@@ -9,22 +9,27 @@
 
 	--fg: #444;
 	--bg: #eee;
+	--border: #ccc;
 }
 
 @media (prefers-color-scheme: dark) {
 	:root {
 		--fg: #bbb;
 		--bg: #111;
+		--border: #222;
 	}
 }
 
 main {
 	display: flex;
-	flex-direction: row;
+}
+
+#list {
+	margin-right: 8px;
 }
 
 #list-input {
-	width: 20em;
+	width: 30em;
 }
 
 #list-items {
@@ -32,6 +37,37 @@ main {
 	padding: 0;
 }
 
+.list-item {
+	margin: 5px 0;
+	display: flex;
+	border: 1px solid var(--border);
+}
+
+.list-item-link {
+	text-decoration: inherit;
+	color: inherit;
+	display: contents;
+}
+
 .list-item-thumb {
 	height: 3em;
+}
+
+.list-item-text {
+	border-width: 0 1px;
+	border-style: solid;
+	border-color: var(--border);
+	flex-grow: 1;
+	padding-left: 7.5px;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+}
+
+.list-item-remove {
+	border: none;
+}
+
+#player-container {
+	flex-grow: 1;
 }

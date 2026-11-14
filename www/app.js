@@ -9,9 +9,6 @@ const listItems =
 	/** @type {HTMLUListElement} */
 	(document.getElementById("list-items"));
 
-/** @type {HTMLLIElement | null} */
-let firstListItem = null;
-
 /** @type {string | null} */
 let currentId = null;
 
@@ -26,22 +23,30 @@ const listItemIds = new Deferred();
  */
 function makeListItemNode(videoId) {
 	const listItem = document.createElement("li");
+	listItem.classList.add("list-item");
 
 	const listItemLink = document.createElement("a");
 	listItemLink.href = `#/v/${videoId}/`;
+	listItemLink.classList.add("list-item-link");
 
 	const listItemThumb = document.createElement("img");
 	listItemThumb.src = `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`;
 	listItemThumb.classList.add("list-item-thumb");
 
-	const listItemText = new Text(videoId);
+	const listItemText = document.createElement("div");
+	listItemText.classList.add("list-item-text");
+
+	const listItemTextVideoId = document.createElement("i");
+	listItemTextVideoId.replaceChildren(new Text(`https://youtu.be/${videoId}`));
+
+	listItemText.replaceChildren(listItemTextVideoId);
 
 	listItemLink.replaceChildren(listItemThumb, listItemText);
 
 	const listItemRemove = document.createElement("button");
 	listItemRemove.classList.add("list-item-remove");
 	listItemRemove.dataset["videoId"] = videoId;
-	listItemRemove.replaceChildren(new Text("x"));
+	listItemRemove.replaceChildren(new Text("✕"));
 
 	listItem.replaceChildren(listItemLink, listItemRemove);
 
@@ -57,10 +62,7 @@ db.then(function (db) {
 		.addEventListener("success", function () {
 			const videoIds = /** @type {string[]} */(this.result).reverse();
 
-			const listItemNodes = videoIds.map(makeListItemNode);
-			firstListItem = listItemNodes[0] || null;
-			listItems.replaceChildren(...listItemNodes);
-
+			listItems.replaceChildren(...videoIds.map(makeListItemNode));
 			listItemIds.resolve(new Set(videoIds));
 		});
 });
@@ -161,11 +163,10 @@ const addVideoId = listItemIds.bind(function (listItemIds, videoId) {
 		.addEventListener("success", function () {
 			listItemIds.add(videoId);
 
-
-			const listItem = makeListItemNode(videoId);
-
-			listItems.insertBefore(listItem, firstListItem);
-			firstListItem = listItem;
+			listItems.insertBefore(
+				makeListItemNode(videoId),
+				listItems.firstChild
+			);
 
 			listInput.value = "";
 			listInput.disabled = false;
@@ -223,10 +224,6 @@ listItems.addEventListener("click", function (event) {
 
 				if (videoId === currentId) {
 					window.location.replace("#/");
-				}
-
-				if (listItemEl === firstListItem) {
-					firstListItem = /** @type {HTMLLIElement} */(listItemEl.nextSibling);
 				}
 
 				listItems.removeChild(listItemEl);
