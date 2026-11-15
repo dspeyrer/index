@@ -16,10 +16,18 @@ function onReady(event) {
 	player.resolve(event.target);
 }
 
+/** @type {number | null} */
+let timestampUpdateInterval = null;
+
 /**
  * @param {any} event
  */
 function onStateChange(event) {
+	if (timestampUpdateInterval !== null) {
+		clearInterval(timestampUpdateInterval);
+		timestampUpdateInterval = null;
+	}
+
 	if (currentItem === null) {
 		return;
 	}
@@ -44,6 +52,24 @@ function onStateChange(event) {
 			updateVideoData();
 		} break;
 		case 1: {
+			timestampUpdateInterval = setInterval(function () {
+				if (currentItem === null) {
+					clearInterval(/** @type {number} */(timestampUpdateInterval));
+					timestampUpdateInterval = null;
+					return;
+				}
+
+				const { video_id } = event.target.getVideoData();
+
+				if (video_id !== currentItem.videoId) {
+					throw new Error("Loaded video ID does not match currentItem.videoId");
+				}
+
+				currentItem.timestamp = event.target.getCurrentTime();
+
+				updateVideoData();
+			}, 2500);
+
 			if ("author" in currentItem) {
 				return;
 			}
