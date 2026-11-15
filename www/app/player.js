@@ -1,3 +1,4 @@
+import { updateVideoData, currentItem } from "../app.js";
 import { Deferred } from "./deferred.js";
 
 const tag = document.createElement("script");
@@ -8,20 +9,66 @@ const firstScriptTag = document.getElementsByTagName("script")[0];
 /** @type {Deferred<any>} */
 export const player = new Deferred();
 
+/**
+ * @param {any} event
+ */
+function onReady(event) {
+	player.resolve(event.target);
+}
+
+/**
+ * @param {any} event
+ */
+function onStateChange(event) {
+	if (currentItem === null) {
+		return;
+	}
+
+	switch (event.data) {
+		case 5: {
+			if ("title" in currentItem) {
+				return;
+			}
+
+			const { video_id, title } = event.target.getVideoData();
+
+			if (video_id !== currentItem.videoId) {
+				throw new Error("Loaded video ID does not match currentItem.videoId");
+			}
+
+			const duration = event.target.getDuration();
+
+			currentItem.title = title;
+			currentItem.duration = duration;
+
+			updateVideoData();
+		} break;
+		case 1: {
+			if ("author" in currentItem) {
+				return;
+			}
+
+			const { video_id, author } = event.target.getVideoData();
+
+			if (video_id !== currentItem.videoId) {
+				throw new Error("Loaded video ID does not match currentItem.videoId");
+			}
+
+			currentItem.author = author;
+
+			updateVideoData();
+		} break;
+	}
+}
+
 window.onYouTubeIframeAPIReady = function () {
 	const playerEl = /** @type {HTMLElement} */(document.getElementById("player"));
-
 	const playerWidth = /** @type {HTMLElement} */(playerEl.parentNode).offsetWidth;
 	const playerHeight = playerWidth / 16 * 9;
 
 	new YT.Player(playerEl, {
 		width: playerWidth | 0,
 		height: playerHeight | 0,
-		events: {
-			/** @param {any} event */
-			onReady(event) {
-				player.resolve(event.target);
-			}
-		}
+		events: { onReady, onStateChange }
 	});
 };

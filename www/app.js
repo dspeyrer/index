@@ -13,8 +13,8 @@ const listItemsEl =
 	/** @type {HTMLUListElement} */
 	(document.getElementById("list-items"));
 
-/** @type {string | null} */
-let currentId = null;
+/** @type {ListItem | null} */
+export let currentItem = null;
 
 /** @type {Deferred<IDBDatabase>} */
 const db = new Deferred();
@@ -67,6 +67,8 @@ db.then(function (db) {
 		.getAll()
 		.addEventListener("success", function () {
 			const listItemNodes = [];
+			// TODO: setup linting so that removing the following type declaration results in an error
+			/** @type {Map<string, ListItem>} */
 			const listItemMap = new Map();
 
 			for (let i = this.result.length - 1; i >= 0; i--) {
@@ -80,6 +82,13 @@ db.then(function (db) {
 			listItems.resolve(listItemMap);
 		});
 });
+
+export function updateVideoData() {
+	/** @type {IDBDatabase} */(db.value)
+		.transaction("list", "readwrite")
+		.objectStore("list")
+		.put(currentItem);
+}
 
 // TODO: handle `blocked` and `error`
 const openReq = indexedDB.open("index", 1);
@@ -118,7 +127,7 @@ const updateUrlVideoId = listItems.bind(function (listItems, videoId) {
 	const listItem = listItems.get(videoId);
 
 	if (listItem !== undefined) {
-		currentId = videoId;
+		currentItem = listItem;
 		cuePlayerVideo(listItem);
 	} else {
 		window.location.replace("#/");
@@ -138,7 +147,7 @@ function tryParseHash(hash) {
 	}
 
 	if (hash === "#/") {
-		currentId = null;
+		currentItem = null;
 		return null;
 	} else if (hash.startsWith("#/v/")) {
 		const videoId = hash.slice(4, -1);
@@ -180,7 +189,6 @@ const addVideo = listItems.bind(function (listItems, videoId, timestamp) {
 		.add(listItem)
 		.addEventListener("success", function () {
 			listItems.set(videoId, listItem);
-
 			listItemsEl.insertBefore(
 				makeListItemNode(videoId),
 				listItemsEl.firstChild
@@ -260,7 +268,7 @@ listItemsEl.addEventListener("click", function (event) {
 			.addEventListener("success", function () {
 				/** @type {Map<string, ListItem>} */(listItems.value).delete(videoId);
 
-				if (videoId === currentId) {
+				if (currentItem !== null && videoId === currentItem.videoId) {
 					window.location.replace("#/");
 				}
 
