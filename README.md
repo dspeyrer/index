@@ -9,7 +9,7 @@ This web app aims to address these and provide a lot of nice other features alon
 
 ## Feature tracker
 - [x] Basic video list
-- [ ] Video playback time tracking
+- [x] Video playback time tracking
 - [x] Client-side storage backend
 - [ ] Server-side storage backend
 - [ ] Integrated SponsorBlock
