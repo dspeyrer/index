@@ -25,33 +25,51 @@ const db = new Deferred();
 const listItems = new Deferred();
 
 /**
- * @param {string} videoId
+ * @param {ListItem} item
  */
-function makeListItemNode(videoId) {
+function makeListItemNode(item) {
 	const listItem = document.createElement("li");
 	listItem.classList.add("list-item");
 
 	const listItemLink = document.createElement("a");
-	listItemLink.href = `#/v/${videoId}/`;
+	listItemLink.href = `#/v/${item.videoId}/`;
 	listItemLink.classList.add("list-item-link");
 
 	const listItemThumb = document.createElement("img");
-	listItemThumb.src = `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`;
+	listItemThumb.src = `https://img.youtube.com/vi/${item.videoId}/mqdefault.jpg`;
 	listItemThumb.classList.add("list-item-thumb");
 
 	const listItemText = document.createElement("div");
 	listItemText.classList.add("list-item-text");
 
-	const listItemTextVideoId = document.createElement("i");
-	listItemTextVideoId.replaceChildren(new Text(`https://youtu.be/${videoId}`));
+	if ("title" in item) {
+		const listItemTextTitle = document.createElement("span");
+		listItemTextTitle.classList.add("list-item-text-line");
+		listItemTextTitle.replaceChildren(new Text(item.title));
 
-	listItemText.replaceChildren(listItemTextVideoId);
+		if ("author" in item) {
+			const listItemTextAuthor = document.createElement("span");
+			listItemTextAuthor.classList.add("list-item-text-line", "text-dark");
+			listItemTextAuthor.replaceChildren(new Text(item.author));
+
+			listItemText.replaceChildren(listItemTextTitle, listItemTextAuthor);
+		} else {
+			listItemText.replaceChildren(listItemTextTitle);
+		}
+	} else {
+		const listItemTextVideoId = document.createElement("i");
+		listItemTextVideoId.classList.add("list-item-text-line", "text-dark");
+		listItemTextVideoId.replaceChildren(new Text(`https://youtu.be/${item.videoId}`));
+
+		listItemText.replaceChildren(listItemTextVideoId);
+	}
+
 
 	listItemLink.replaceChildren(listItemThumb, listItemText);
 
 	const listItemRemove = document.createElement("button");
 	listItemRemove.classList.add("list-item-remove");
-	listItemRemove.dataset["videoId"] = videoId;
+	listItemRemove.dataset["videoId"] = item.videoId;
 	listItemRemove.replaceChildren(new Text("✕"));
 
 	listItem.replaceChildren(listItemLink, listItemRemove);
@@ -74,7 +92,7 @@ db.then(function (db) {
 			for (let i = this.result.length - 1; i >= 0; i--) {
 				const item = /** @type {ListItem} */(this.result[i]);
 
-				listItemNodes.push(makeListItemNode(item.videoId));
+				listItemNodes.push(makeListItemNode(item));
 				listItemMap.set(item.videoId, item);
 			}
 
@@ -190,7 +208,7 @@ const addVideo = listItems.bind(function (listItems, videoId, timestamp) {
 		.addEventListener("success", function () {
 			listItems.set(videoId, listItem);
 			listItemsEl.insertBefore(
-				makeListItemNode(videoId),
+				makeListItemNode(listItem),
 				listItemsEl.firstChild
 			);
 

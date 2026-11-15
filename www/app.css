@@ -1,5 +1,5 @@
 :root {
-	font-size: 14px;
+	font-size: 12px;
 	font-family: system-ui, 'Segoe UI', Roboto, sans-serif;
 
 	color-scheme: light dark;
@@ -8,6 +8,7 @@
 	background: var(--bg);
 
 	--fg: #444;
+	--fg-dark: #888;
 	--bg: #eee;
 	--border: #ccc;
 }
@@ -15,6 +16,7 @@
 @media (prefers-color-scheme: dark) {
 	:root {
 		--fg: #bbb;
+		--fg-dark: #777;
 		--bg: #111;
 		--border: #222;
 	}
@@ -24,15 +26,21 @@ main {
 	display: flex;
 }
 
+.text-dark {
+	color: var(--fg-dark);
+}
+
 #list {
 	margin-right: 8px;
+	width: 30em;
 }
 
 #list-input {
 	border: 1px solid var(--border);
 	padding: 5px;
 	background: none;
-	width: 30em;
+	width: 100%;
+	box-sizing: border-box;
 }
 
 #list-input:focus {
@@ -70,6 +78,13 @@ main {
 	display: flex;
 	flex-direction: column;
 	justify-content: center;
+	min-width: 0;
+}
+
+.list-item-text-line {
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
 }
 
 .list-item-remove {
