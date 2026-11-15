@@ -9,6 +9,10 @@ const listInput =
 	/** @type {HTMLInputElement} */
 	(document.getElementById("list-input"));
 
+const listExportEl =
+	/** @type {HTMLAnchorElement} */
+	(document.getElementById("list-export"));
+
 const listItemsEl =
 	/** @type {HTMLUListElement} */
 	(document.getElementById("list-items"));
@@ -23,6 +27,31 @@ const db = new Deferred();
  * @type {Deferred<Map<string, ListItem>>}
  */
 const listItems = new Deferred();
+
+function updateListExportBtn() {
+	listExportEl.replaceChildren(new Text(`Export ${/** @type {Map<string, ListItem>} */(listItems.value).size} videos`));
+}
+
+listExportEl.addEventListener("click", function (event) {
+	if (listItems.value === null) {
+		event.preventDefault();
+		return;
+	}
+
+	const backup = new Blob([
+		JSON.stringify({
+			version: 1,
+			list: [...listItems.value.values()]
+		}, null, 4)
+	]);
+
+	const url = window.URL.createObjectURL(backup);
+	listExportEl.href = url;
+
+    setTimeout(function() {
+        window.URL.revokeObjectURL(url);
+    }, 1000);
+});
 
 /**
  * @param {ListItem} item
@@ -98,6 +127,8 @@ db.then(function (db) {
 
 			listItemsEl.replaceChildren(...listItemNodes);
 			listItems.resolve(listItemMap);
+
+			updateListExportBtn();
 		});
 });
 
@@ -212,6 +243,8 @@ const addVideo = listItems.bind(function (listItems, videoId, timestamp) {
 				listItemsEl.firstChild
 			);
 
+			updateListExportBtn();
+
 			listInput.value = "";
 			listInput.disabled = false;
 		});
@@ -291,6 +324,8 @@ listItemsEl.addEventListener("click", function (event) {
 				}
 
 				listItemsEl.removeChild(listItemEl);
+
+				updateListExportBtn();
 
 				removeButton.disabled = false;
 			});

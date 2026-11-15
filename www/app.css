@@ -7,7 +7,7 @@
 	color: var(--fg);
 	background: var(--bg);
 
-	--fg: #444;
+	--fg: #000;
 	--fg-dark: #888;
 	--bg: #eee;
 	--border: #ccc;
@@ -15,42 +15,76 @@
 
 @media (prefers-color-scheme: dark) {
 	:root {
-		--fg: #bbb;
+		--fg: #fff;
 		--fg-dark: #777;
 		--bg: #111;
 		--border: #222;
 	}
 }
 
-main {
+html {
+	height: 100%;
+}
+
+body {
 	display: flex;
+	height: 100%;
+	margin: 0;
+	padding: 10px;
+	box-sizing: border-box;
 }
 
 .text-dark {
 	color: var(--fg-dark);
 }
 
+a {
+	text-decoration: inherit;
+	color: inherit;
+	cursor: pointer;
+}
+
+input {
+	font-size: inherit;
+}
+
+button {
+	font-size: inherit;
+	cursor: pointer;
+	background: none;
+}
+
 #list {
 	margin-right: 8px;
 	width: 30em;
+	display: flex;
+	flex-direction: column;
 }
 
 #list-input {
 	border: 1px solid var(--border);
 	padding: 5px;
 	background: none;
-	width: 100%;
 	box-sizing: border-box;
+	width: 100%;
 }
 
 #list-input:focus {
 	outline: none;
 }
 
+#list-export {
+	border: 1px solid var(--border);
+	padding: 5px;
+	text-align: center;
+}
+
 #list-items {
 	list-style: none;
 	padding: 0;
 	margin: 0;
+	flex-grow: 1;
+	overflow: scroll;
 }
 
 .list-item {
@@ -60,8 +94,6 @@ main {
 }
 
 .list-item-link {
-	text-decoration: inherit;
-	color: inherit;
 	display: contents;
 }
 
@@ -89,8 +121,6 @@ main {
 
 .list-item-remove {
 	border: none;
-	cursor: pointer;
-	background: none;
 }
 
 #player-container {
