@@ -93,7 +93,6 @@ function makeListItemNode(item) {
 		listItemText.replaceChildren(listItemTextVideoId);
 	}
 
-
 	listItemLink.replaceChildren(listItemThumb, listItemText);
 
 	const listItemRemove = document.createElement("button");
@@ -110,7 +109,6 @@ db.then(function (db) {
 	db
 		.transaction("list", "readonly")
 		.objectStore("list")
-		.index("createdAt")
 		.getAll()
 		.addEventListener("success", function () {
 			const listItemNodes = [];
@@ -137,6 +135,8 @@ db.then(function (db) {
 });
 
 export function updateVideoData() {
+	/** @type {ListItem} */(currentItem).updatedAt = new Date();
+
 	/** @type {IDBDatabase} */(db.value)
 		.transaction("list", "readwrite")
 		.objectStore("list")
@@ -147,8 +147,7 @@ export function updateVideoData() {
 const openReq = indexedDB.open("index", 1);
 
 openReq.addEventListener("upgradeneeded", function () {
-	const dbList = this.result.createObjectStore("list", { keyPath: "videoId" });
-	dbList.createIndex("createdAt", "createdAt");
+	this.result.createObjectStore("list", { keyPath: "itemId", autoIncrement: true });
 });
 
 openReq.addEventListener("success", function () {
@@ -296,9 +295,12 @@ function processNextUrl(store, i, input) {
 		store
 			.add(listItem)
 			.addEventListener("success", function () {
-				listItemsMap.set(videoId, listItem);
+				const keyedListItem = /** @type {ListItem} */(listItem);
+				keyedListItem.itemId = /** @type {number} */(this.result);
+
+				listItemsMap.set(videoId, keyedListItem);
 				listItemsEl.insertBefore(
-					makeListItemNode(listItem),
+					makeListItemNode(keyedListItem),
 					listItemsEl.firstChild
 				);
 
@@ -334,14 +336,17 @@ listItemsEl.addEventListener("click", function (event) {
 		const listItemEl = /** @type {HTMLLIElement} */(targetEl.parentNode);
 		const videoId = /** @type {string} */(targetEl.dataset["videoId"]);
 
+		const listItemsMap = /** @type {Map<string, ListItem>} */(listItems.value);
+		const itemId = /** @type {ListItem} */(listItemsMap.get(videoId)).itemId;
+
 		removeButton.disabled = true;
 
 		/** @type {IDBDatabase} */(db.value)
 			.transaction("list", "readwrite")
 			.objectStore("list")
-			.delete(videoId)
+			.delete(itemId)
 			.addEventListener("success", function () {
-				/** @type {Map<string, ListItem>} */(listItems.value).delete(videoId);
+				listItemsMap.delete(videoId);
 
 				if (currentItem !== null && videoId === currentItem.videoId) {
 					window.location.replace("#/");

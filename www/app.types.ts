@@ -1,4 +1,5 @@
 export type ListItem = {
+	itemId: number;
 	videoId: string;
 	timestamp: number;
 	createdAt: Date;
