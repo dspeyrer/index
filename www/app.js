@@ -6,7 +6,7 @@ import { Deferred } from "./app/deferred.js";
 import { player } from "./app/player.js";
 
 const listInput =
-	/** @type {HTMLInputElement} */
+	/** @type {HTMLTextAreaElement} */
 	(document.getElementById("list-input"));
 
 const listExportEl =
@@ -29,7 +29,7 @@ const db = new Deferred();
 const listItems = new Deferred();
 
 function updateListExportBtn() {
-	listExportEl.replaceChildren(new Text(`Export ${/** @type {Map<string, ListItem>} */(listItems.value).size} videos`));
+	listExportEl.replaceChildren(new Text(`Export ${/** @type {Map<string, ListItem>} */(listItems.value).size} video(s)`));
 }
 
 listExportEl.addEventListener("click", function (event) {
@@ -129,6 +129,10 @@ db.then(function (db) {
 			listItems.resolve(listItemMap);
 
 			updateListExportBtn();
+
+			listInput.addEventListener("input", checkListInput);
+
+			checkListInput();
 		});
 });
 
@@ -172,7 +176,7 @@ const cuePlayerVideo = player.bind(function (player, item) {
 });
 
 /** @type {(videoId: string) => void} */
-const updateUrlVideoId = listItems.bind(function (listItems, videoId) {
+const urlVideoIdUpdated = listItems.bind(function (listItems, videoId) {
 	const listItem = listItems.get(videoId);
 
 	if (listItem !== undefined) {
@@ -200,7 +204,7 @@ function tryParseHash(hash) {
 		return null;
 	} else if (hash.startsWith("#/v/")) {
 		const videoId = hash.slice(4, -1);
-		updateUrlVideoId(videoId);
+		urlVideoIdUpdated(videoId);
 		return null;
 	}
 
@@ -221,35 +225,6 @@ window.addEventListener("hashchange", function () {
 	updatePath();
 });
 
-/** @type (videoId: string, timestamp: number) => void */
-const addVideo = listItems.bind(function (listItems, videoId, timestamp) {
-	if (listItems.has(videoId)) {
-		listInput.value = "";
-		listInput.disabled = false;
-
-		return;
-	}
-
-	const listItem = { videoId, createdAt: new Date(), timestamp };
-
-	/** @type {IDBDatabase} */(db.value)
-		.transaction("list", "readwrite")
-		.objectStore("list")
-		.add(listItem)
-		.addEventListener("success", function () {
-			listItems.set(videoId, listItem);
-			listItemsEl.insertBefore(
-				makeListItemNode(listItem),
-				listItemsEl.firstChild
-			);
-
-			updateListExportBtn();
-
-			listInput.value = "";
-			listInput.disabled = false;
-		});
-});
-
 /**
  * @param {string | null} string
  * @param {number} fallback
@@ -268,39 +243,88 @@ function parseIntOrDefault(string, fallback) {
 	return parsed;
 }
 
-listInput.addEventListener("input", function () {
-	const url = tryParseUrl(listInput.value);
+/**
+ * @param {IDBObjectStore} store
+ * @param {number} i
+ * @param {string[]} input
+ */
+function processNextUrl(store, i, input) {
+	const listItemsMap = /** @type {Map<string, ListItem>} */(listItems.value);
 
-	if (url === null) {
+	for (; i < input.length; i++) {
+		const line = input[i].trim();
+
+		if (line === "") {
+			continue;
+		}
+
+		const url = tryParseUrl(line);
+
+		if (url === null) {
+			continue;
+		}
+
+		let videoId = null;
+
+		switch (url.hostname) {
+			case "www.youtube.com":
+			case "youtube.com":
+				if (url.pathname.startsWith("/shorts/")) {
+					videoId = url.pathname.slice(8);
+				} else {
+					videoId = url.searchParams.get("v");
+				}
+				break;
+			case "youtu.be":
+				videoId = url.pathname.slice(1);
+				break;
+		}
+
+		if (videoId === null) {
+			continue;
+		}
+
+		let timestamp = parseIntOrDefault(url.searchParams.get("t"), 0);
+
+		if (listItemsMap.has(videoId)) {
+			listInput.value = "";
+			continue;
+		}
+
+		const listItem = { videoId, createdAt: new Date(), timestamp };
+
+		store
+			.add(listItem)
+			.addEventListener("success", function () {
+				listItemsMap.set(videoId, listItem);
+				listItemsEl.insertBefore(
+					makeListItemNode(listItem),
+					listItemsEl.firstChild
+				);
+
+				processNextUrl(store, i + 1, input)
+			});
+
 		return;
 	}
 
-	let videoId = null;
+	updateListExportBtn();
+	listInput.disabled = false;
+}
 
-	switch (url.hostname) {
-		case "www.youtube.com":
-		case "youtube.com":
-			if (url.pathname.startsWith("/shorts/")) {
-				videoId = url.pathname.slice(8);
-			} else {
-				videoId = url.searchParams.get("v");
-			}
-			break;
-		case "youtu.be":
-			videoId = url.pathname.slice(1);
-			break;
-	}
-
-	if (videoId === null) {
-		return;
-	}
-
-	let timestamp = parseIntOrDefault(url.searchParams.get("t"), 0);
-
+function checkListInput() {
+	const input = listInput.value;
+	listInput.value = "";
 	listInput.disabled = true;
 
-	addVideo(videoId, timestamp);
-});
+	const inputLines = input.split(/\n/);
+
+	const store = /** @type {IDBDatabase} */(db.value)
+		.transaction("list", "readwrite")
+		.objectStore("list");
+
+	processNextUrl(store, 0, inputLines);
+}
 
 listItemsEl.addEventListener("click", function (event) {
 	const targetEl = /** @type {HTMLElement} */(event.target);

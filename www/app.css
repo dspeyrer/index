@@ -18,7 +18,7 @@
 		--fg: #fff;
 		--fg-dark: #777;
 		--bg: #111;
-		--border: #222;
+		--border: #333;
 	}
 }
 
@@ -67,6 +67,8 @@ button {
 	background: none;
 	box-sizing: border-box;
 	width: 100%;
+	resize: none;
+	font: inherit;
 }
 
 #list-input:focus {
